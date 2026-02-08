@@ -1,16 +1,17 @@
 :root {
-  --bg-1: #0b1020;
-  --bg-2: #1a1f3b;
-  --bg-3: #101522;
-  --accent-1: #ff6a3d;
-  --accent-2: #00d4ff;
-  --accent-3: #ffd166;
-  --card: #161b2e;
-  --ink: #e8edf7;
-  --muted: #9aa6c3;
-  --good: #3bd671;
-  --bad: #ff4d6d;
-  --shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+  --bg-1: #0f141a;
+  --bg-2: #141b24;
+  --bg-3: #10161d;
+  --accent-1: #2f80ed;
+  --accent-2: #1cb5b3;
+  --accent-3: #f2c94c;
+  --card: #141b24;
+  --ink: #eef2f8;
+  --muted: #a4b0c2;
+  --good: #27ae60;
+  --bad: #eb5757;
+  --shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+  --ring: rgba(47, 128, 237, 0.35);
 }
 
 * {
@@ -22,17 +23,17 @@ html, body {
   padding: 0;
   height: 100%;
   color: var(--ink);
-  background: radial-gradient(1200px 800px at 10% 10%, #1b2142 0%, var(--bg-1) 60%),
-    radial-gradient(800px 600px at 90% 20%, #202757 0%, var(--bg-2) 55%),
-    radial-gradient(600px 400px at 50% 90%, #101522 0%, var(--bg-3) 55%);
-  font-family: "Avenir Next", "Futura", "Trebuchet MS", sans-serif;
+  background: radial-gradient(900px 600px at 5% 0%, rgba(47, 128, 237, 0.18), transparent 60%),
+    radial-gradient(900px 600px at 100% 0%, rgba(28, 181, 179, 0.15), transparent 55%),
+    linear-gradient(160deg, var(--bg-2), var(--bg-1) 55%, var(--bg-3));
+  font-family: "Sora", "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
 }
 
 body::before {
   content: "";
   position: fixed;
   inset: 0;
-  background: linear-gradient(120deg, rgba(255, 106, 61, 0.08), rgba(0, 212, 255, 0.08));
+  background: radial-gradient(800px 400px at 50% 100%, rgba(255, 255, 255, 0.05), transparent 60%);
   pointer-events: none;
 }
 
@@ -44,16 +45,16 @@ a {
 .wrapper {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 32px 20px 80px;
+  padding: 48px 24px 90px;
 }
 
 .hero {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 20px;
-  padding: 32px;
-  border-radius: 24px;
-  background: linear-gradient(145deg, rgba(26, 31, 59, 0.9), rgba(16, 21, 34, 0.9));
+  padding: 40px;
+  border-radius: 28px;
+  background: linear-gradient(140deg, rgba(20, 27, 36, 0.92), rgba(14, 18, 24, 0.96));
   box-shadow: var(--shadow);
   position: relative;
   overflow: hidden;
@@ -62,25 +63,21 @@ a {
 .hero::after {
   content: "";
   position: absolute;
-  width: 320px;
-  height: 320px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, rgba(0, 212, 255, 0.3), transparent 65%);
-  top: -140px;
-  right: -100px;
-  filter: blur(2px);
+  inset: 0;
+  background-image: linear-gradient(transparent 0%, rgba(255, 255, 255, 0.04) 50%, transparent 100%);
+  opacity: 0.4;
 }
 
 .hero h1 {
-  font-size: clamp(2.4rem, 4vw, 4rem);
-  margin: 0 0 8px;
+  font-size: clamp(2.4rem, 4vw, 3.8rem);
+  margin: 0 0 12px;
   letter-spacing: -0.02em;
 }
 
 .hero p {
   margin: 0 0 16px;
   color: var(--muted);
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   max-width: 720px;
 }
 
@@ -93,7 +90,7 @@ a {
 .chip {
   padding: 6px 14px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
   font-size: 0.9rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -102,7 +99,7 @@ a {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 18px;
-  margin-top: 28px;
+  margin-top: 32px;
 }
 
 .card {
@@ -111,14 +108,15 @@ a {
   padding: 18px;
   box-shadow: var(--shadow);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   position: relative;
   overflow: hidden;
 }
 
 .card:hover {
-  transform: translateY(-4px) scale(1.01);
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.45);
+  transform: translateY(-4px);
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.45);
+  border-color: rgba(47, 128, 237, 0.35);
 }
 
 .card h3 {
@@ -138,8 +136,8 @@ a {
   gap: 6px;
   padding: 8px 14px;
   border-radius: 999px;
-  background: linear-gradient(120deg, var(--accent-1), var(--accent-2));
-  color: #101522;
+  background: linear-gradient(120deg, rgba(47, 128, 237, 0.85), rgba(28, 181, 179, 0.85));
+  color: #0f141a;
   font-weight: 700;
   font-size: 0.9rem;
 }
@@ -177,12 +175,18 @@ button {
   color: var(--ink);
   cursor: pointer;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: transform 0.2s ease, background 0.2s ease;
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 }
 
 button:hover {
   background: rgba(255, 255, 255, 0.16);
   transform: translateY(-1px);
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
 }
 
 .board {
