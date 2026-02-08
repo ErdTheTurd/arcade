@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>2048</title>
+    <link rel="stylesheet" href="../assets/site.css" />
+    <style>
+      #grid {
+        display: grid;
+        grid-template-columns: repeat(4, 72px);
+        gap: 8px;
+        padding: 14px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+      }
+      .tile {
+        width: 72px;
+        height: 72px;
+        display: grid;
+        place-items: center;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 1.2rem;
+        background: rgba(255, 255, 255, 0.08);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper fade-in">
+      <a class="back-link" href="../index.html">Back to Hub</a>
+      <div class="page-title">
+        <h2>2048</h2>
+        <div class="controls">
+          <button id="new">New Game</button>
+        </div>
+      </div>
+
+      <div class="game-shell">
+        <div class="game-panel">
+          <div id="grid"></div>
+        </div>
+        <div class="game-panel">
+          <strong>How to play</strong>
+          <div class="note">Use arrow keys to slide tiles. Combine matching numbers.</div>
+          <div class="note" id="status">Score: 0</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const gridEl = document.getElementById("grid");
+      const statusEl = document.getElementById("status");
+      const newBtn = document.getElementById("new");
+      const size = 4;
+      let grid = [];
+      let score = 0;
+
+      const colors = {
+        2: "#2ec4b6",
+        4: "#00d4ff",
+        8: "#ffd166",
+        16: "#ff9f1c",
+        32: "#ff6a3d",
+        64: "#ef476f",
+        128: "#7f7eff",
+        256: "#6a4c93",
+        512: "#577590",
+        1024: "#43aa8b",
+        2048: "#90be6d",
+      };
+
+      function emptyGrid() {
+        grid = Array.from({ length: size }, () => Array(size).fill(0));
+      }
+
+      function addTile() {
+        const empties = [];
+        for (let r = 0; r < size; r += 1) {
+          for (let c = 0; c < size; c += 1) {
+            if (!grid[r][c]) empties.push({ r, c });
+          }
+        }
+        if (empties.length === 0) return false;
+        const pick = empties[Math.floor(Math.random() * empties.length)];
+        grid[pick.r][pick.c] = Math.random() > 0.1 ? 2 : 4;
+        return true;
+      }
+
+      function slide(row) {
+        const filtered = row.filter((v) => v !== 0);
+        const merged = [];
+        for (let i = 0; i < filtered.length; i += 1) {
+          if (filtered[i] === filtered[i + 1]) {
+            const value = filtered[i] * 2;
+            score += value;
+            merged.push(value);
+            i += 1;
+          } else {
+            merged.push(filtered[i]);
+          }
+        }
+        while (merged.length < size) merged.push(0);
+        return merged;
+      }
+
+      function rotateGrid() {
+        grid = grid[0].map((_, i) => grid.map((row) => row[i]).reverse());
+      }
+
+      function move(dir) {
+        let moved = false;
+        for (let i = 0; i < dir; i += 1) rotateGrid();
+        for (let r = 0; r < size; r += 1) {
+          const row = grid[r];
+          const slid = slide(row);
+          if (row.some((v, i) => v !== slid[i])) moved = true;
+          grid[r] = slid;
+        }
+        for (let i = 0; i < (4 - dir) % 4; i += 1) rotateGrid();
+        if (moved) addTile();
+        render();
+        if (!canMove()) statusEl.textContent = "No moves left. Start a new game.";
+      }
+
+      function canMove() {
+        for (let r = 0; r < size; r += 1) {
+          for (let c = 0; c < size; c += 1) {
+            if (!grid[r][c]) return true;
+            if (grid[r][c] === grid[r][c + 1]) return true;
+            if ((grid[r + 1] || [])[c] === grid[r][c]) return true;
+          }
+        }
+        return false;
+      }
+
+      function render() {
+        gridEl.innerHTML = "";
+        grid.forEach((row) => {
+          row.forEach((value) => {
+            const tile = document.createElement("div");
+            tile.className = "tile";
+            if (value) {
+              tile.style.background = colors[value] || "#f9c74f";
+              tile.textContent = value;
+            }
+            gridEl.appendChild(tile);
+          });
+        });
+        statusEl.textContent = `Score: ${score}`;
+      }
+
+      document.addEventListener("keydown", (event) => {
+        const keyMap = {
+          ArrowUp: 1,
+          ArrowRight: 2,
+          ArrowDown: 3,
+          ArrowLeft: 0,
+        };
+        if (keyMap[event.key] !== undefined) {
+          move(keyMap[event.key]);
+        }
+      });
+
+      newBtn.addEventListener("click", () => {
+        score = 0;
+        emptyGrid();
+        addTile();
+        addTile();
+        render();
+      });
+
+      emptyGrid();
+      addTile();
+      addTile();
+      render();
+    </script>
+  </body>
+</html>
