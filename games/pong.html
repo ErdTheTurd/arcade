@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pong</title>
+    <link rel="stylesheet" href="../assets/site.css" />
+    <style>
+      #pong {
+        width: 640px;
+        height: 360px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper fade-in">
+      <a class="back-link" href="../index.html">Back to Hub</a>
+      <div class="page-title">
+        <h2>Pong</h2>
+        <div class="controls">
+          <button id="serve">Serve</button>
+          <button id="reset">Reset</button>
+        </div>
+      </div>
+
+      <div class="game-shell">
+        <canvas id="pong" width="640" height="360"></canvas>
+        <div class="game-panel">
+          <strong>How to play</strong>
+          <div class="note">Move your paddle with W/S or Up/Down. Keep the ball alive.</div>
+          <div class="note" id="status">Rallies: 0</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("pong");
+      const ctx = canvas.getContext("2d");
+      const serveBtn = document.getElementById("serve");
+      const resetBtn = document.getElementById("reset");
+      const statusEl = document.getElementById("status");
+
+      const paddle = { x: 20, y: 140, w: 12, h: 80, speed: 6 };
+      const wall = { x: canvas.width - 20, y: 0, w: 10, h: canvas.height };
+      let ball = { x: 320, y: 180, r: 8, vx: 0, vy: 0 };
+      let keys = {};
+      let rallies = 0;
+      let running = false;
+
+      function resetBall() {
+        ball = { x: 320, y: 180, r: 8, vx: 0, vy: 0 };
+      }
+
+      function serve() {
+        if (!running) return;
+        const dir = Math.random() > 0.5 ? 1 : -1;
+        ball.vx = 4 * dir;
+        ball.vy = Math.random() * 4 - 2;
+      }
+
+      function update() {
+        if (!running) return;
+        if (keys.ArrowUp || keys.w) paddle.y -= paddle.speed;
+        if (keys.ArrowDown || keys.s) paddle.y += paddle.speed;
+        paddle.y = Math.max(0, Math.min(canvas.height - paddle.h, paddle.y));
+
+        ball.x += ball.vx;
+        ball.y += ball.vy;
+
+        if (ball.y - ball.r <= 0 || ball.y + ball.r >= canvas.height) {
+          ball.vy *= -1;
+        }
+
+        if (
+          ball.x - ball.r <= paddle.x + paddle.w &&
+          ball.y >= paddle.y &&
+          ball.y <= paddle.y + paddle.h
+        ) {
+          ball.vx = Math.abs(ball.vx);
+          rallies += 1;
+        }
+
+        if (ball.x + ball.r >= wall.x) {
+          ball.vx = -Math.abs(ball.vx);
+        }
+
+        if (ball.x < 0) {
+          running = false;
+          statusEl.textContent = `Missed! Rallies: ${rallies}`;
+          resetBall();
+        }
+
+        draw();
+        statusEl.textContent = `Rallies: ${rallies}`;
+        requestAnimationFrame(update);
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#0b0f1f";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#00d4ff";
+        ctx.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
+        ctx.fillStyle = "#ffd166";
+        ctx.fillRect(wall.x, wall.y, wall.w, wall.h);
+        ctx.beginPath();
+        ctx.fillStyle = "#ff6a3d";
+        ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      document.addEventListener("keydown", (event) => {
+        keys[event.key] = true;
+      });
+      document.addEventListener("keyup", (event) => {
+        keys[event.key] = false;
+      });
+
+      serveBtn.addEventListener("click", () => {
+        if (!running) {
+          running = true;
+          requestAnimationFrame(update);
+        }
+        if (ball.vx === 0) serve();
+      });
+
+      resetBtn.addEventListener("click", () => {
+        running = false;
+        rallies = 0;
+        paddle.y = 140;
+        resetBall();
+        draw();
+      });
+
+      draw();
+    </script>
+  </body>
+</html>
