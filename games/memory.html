@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Memory Match</title>
+    <link rel="stylesheet" href="../assets/site.css" />
+    <style>
+      #grid {
+        display: grid;
+        grid-template-columns: repeat(4, 80px);
+        gap: 12px;
+      }
+      .card {
+        width: 80px;
+        height: 80px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.08);
+        display: grid;
+        place-items: center;
+        font-weight: 700;
+        font-size: 1.4rem;
+      }
+      .card.revealed {
+        background: rgba(0, 212, 255, 0.2);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper fade-in">
+      <a class="back-link" href="../index.html">Back to Hub</a>
+      <div class="page-title">
+        <h2>Memory Match</h2>
+        <div class="controls">
+          <button id="reset">Reset</button>
+        </div>
+      </div>
+
+      <div class="game-shell">
+        <div class="game-panel">
+          <div id="grid"></div>
+        </div>
+        <div class="game-panel">
+          <strong>How to play</strong>
+          <div class="note">Flip two cards at a time and find all pairs.</div>
+          <div class="note" id="status">Moves: 0</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const gridEl = document.getElementById("grid");
+      const statusEl = document.getElementById("status");
+      const resetBtn = document.getElementById("reset");
+
+      const icons = ["A", "B", "C", "D", "E", "F", "G", "H"];
+      let deck = [];
+      let first = null;
+      let lock = false;
+      let moves = 0;
+
+      function setup() {
+        deck = [...icons, ...icons]
+          .map((value) => ({ value, matched: false }))
+          .sort(() => Math.random() - 0.5);
+        moves = 0;
+        first = null;
+        lock = false;
+        render();
+      }
+
+      function render() {
+        gridEl.innerHTML = "";
+        deck.forEach((card, index) => {
+          const btn = document.createElement("button");
+          btn.className = "card";
+          if (card.matched) btn.classList.add("revealed");
+          btn.textContent = card.matched ? card.value : "";
+          btn.addEventListener("click", () => flip(index));
+          gridEl.appendChild(btn);
+        });
+        statusEl.textContent = `Moves: ${moves}`;
+      }
+
+      function flip(index) {
+        if (lock) return;
+        const card = deck[index];
+        if (card.matched) return;
+        const btn = gridEl.children[index];
+        btn.textContent = card.value;
+        btn.classList.add("revealed");
+
+        if (!first) {
+          first = { index, value: card.value };
+          return;
+        }
+
+        moves += 1;
+        if (first.value === card.value && first.index !== index) {
+          deck[first.index].matched = true;
+          deck[index].matched = true;
+          first = null;
+          render();
+          if (deck.every((c) => c.matched)) statusEl.textContent = `Cleared in ${moves} moves.`;
+          return;
+        }
+
+        lock = true;
+        setTimeout(() => {
+          render();
+          lock = false;
+          first = null;
+        }, 700);
+      }
+
+      resetBtn.addEventListener("click", setup);
+      setup();
+    </script>
+  </body>
+</html>
