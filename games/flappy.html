@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Flappy Jet</title>
+    <link rel="stylesheet" href="../assets/site.css" />
+    <style>
+      #flappy {
+        width: 420px;
+        height: 560px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper fade-in">
+      <a class="back-link" href="../index.html">Back to Hub</a>
+      <div class="page-title">
+        <h2>Flappy Jet</h2>
+        <div class="controls">
+          <button id="start">Start</button>
+          <button id="reset">Reset</button>
+        </div>
+      </div>
+
+      <div class="game-shell">
+        <canvas id="flappy" width="420" height="560"></canvas>
+        <div class="game-panel">
+          <strong>How to play</strong>
+          <div class="note">Press Space or click to boost upward.</div>
+          <div class="note" id="status">Score: 0</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("flappy");
+      const ctx = canvas.getContext("2d");
+      const startBtn = document.getElementById("start");
+      const resetBtn = document.getElementById("reset");
+      const statusEl = document.getElementById("status");
+
+      let bird = { x: 120, y: 280, vy: 0, r: 14 };
+      let pipes = [];
+      let running = false;
+      let score = 0;
+      let frame = 0;
+
+      function resetGame() {
+        bird = { x: 120, y: 280, vy: 0, r: 14 };
+        pipes = [];
+        score = 0;
+        frame = 0;
+        updateStatus();
+        draw();
+      }
+
+      function updateStatus(message) {
+        statusEl.textContent = message || `Score: ${score}`;
+      }
+
+      function addPipe() {
+        const gap = 140;
+        const top = 60 + Math.random() * 200;
+        pipes.push({ x: canvas.width, top, gap, passed: false });
+      }
+
+      function step() {
+        if (!running) return;
+        frame += 1;
+        if (frame % 90 === 0) addPipe();
+
+        bird.vy += 0.5;
+        bird.y += bird.vy;
+
+        pipes.forEach((pipe) => {
+          pipe.x -= 2.4;
+          if (!pipe.passed && pipe.x + 40 < bird.x) {
+            pipe.passed = true;
+            score += 1;
+          }
+        });
+
+        pipes = pipes.filter((pipe) => pipe.x > -60);
+
+        if (bird.y + bird.r > canvas.height || bird.y - bird.r < 0) {
+          running = false;
+          updateStatus("Crashed. Reset?");
+        }
+
+        for (const pipe of pipes) {
+          if (
+            bird.x + bird.r > pipe.x &&
+            bird.x - bird.r < pipe.x + 40 &&
+            (bird.y - bird.r < pipe.top || bird.y + bird.r > pipe.top + pipe.gap)
+          ) {
+            running = false;
+            updateStatus("Hit a gate. Reset?");
+          }
+        }
+
+        draw();
+        updateStatus();
+        requestAnimationFrame(step);
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#0b0f1f";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "#00d4ff";
+        pipes.forEach((pipe) => {
+          ctx.fillRect(pipe.x, 0, 40, pipe.top);
+          ctx.fillRect(pipe.x, pipe.top + pipe.gap, 40, canvas.height);
+        });
+
+        ctx.beginPath();
+        ctx.fillStyle = "#ffd166";
+        ctx.arc(bird.x, bird.y, bird.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      function boost() {
+        if (!running) return;
+        bird.vy = -7.5;
+      }
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === " ") boost();
+      });
+      canvas.addEventListener("click", boost);
+
+      startBtn.addEventListener("click", () => {
+        if (!running) {
+          running = true;
+          requestAnimationFrame(step);
+        }
+      });
+
+      resetBtn.addEventListener("click", () => {
+        running = false;
+        resetGame();
+      });
+
+      resetGame();
+    </script>
+  </body>
+</html>
