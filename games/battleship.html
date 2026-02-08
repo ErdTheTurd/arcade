@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Battleship</title>
+    <link rel="stylesheet" href="../assets/site.css" />
+    <style>
+      #battle-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 44px);
+        gap: 8px;
+      }
+      .bs-cell {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        font-weight: 700;
+        color: var(--ink);
+      }
+      .bs-cell.hit {
+        background: rgba(47, 128, 237, 0.35);
+      }
+      .bs-cell.miss {
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper fade-in">
+      <a class="back-link" href="../index.html">Back to Hub</a>
+      <div class="page-title">
+        <h2>Battleship</h2>
+        <div class="controls">
+          <button id="reset">Reset</button>
+        </div>
+      </div>
+
+      <div class="game-shell">
+        <div class="game-panel">
+          <div id="battle-grid"></div>
+        </div>
+        <div class="game-panel">
+          <strong>How to play</strong>
+          <div class="note">Click tiles to fire. Sink all ships to win.</div>
+          <div class="note" id="status">Ships remaining: 5</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const gridEl = document.getElementById("battle-grid");
+      const statusEl = document.getElementById("status");
+      const resetBtn = document.getElementById("reset");
+
+      const size = 7;
+      const shipSizes = [3, 3, 2, 2, 2];
+      let board = [];
+      let shipsLeft = shipSizes.length;
+      let hits = 0;
+
+      function emptyBoard() {
+        board = Array.from({ length: size }, () => Array(size).fill(0));
+      }
+
+      function placeShips() {
+        shipsLeft = shipSizes.length;
+        hits = 0;
+        shipSizes.forEach((length) => {
+          let placed = false;
+          while (!placed) {
+            const horizontal = Math.random() > 0.5;
+            const row = Math.floor(Math.random() * size);
+            const col = Math.floor(Math.random() * size);
+            if (horizontal && col + length > size) continue;
+            if (!horizontal && row + length > size) continue;
+            let clear = true;
+            for (let i = 0; i < length; i += 1) {
+              const r = row + (horizontal ? 0 : i);
+              const c = col + (horizontal ? i : 0);
+              if (board[r][c] !== 0) clear = false;
+            }
+            if (!clear) continue;
+            for (let i = 0; i < length; i += 1) {
+              const r = row + (horizontal ? 0 : i);
+              const c = col + (horizontal ? i : 0);
+              board[r][c] = length;
+            }
+            placed = true;
+          }
+        });
+      }
+
+      function render() {
+        gridEl.innerHTML = "";
+        gridEl.style.gridTemplateColumns = `repeat(${size}, 44px)`;
+        for (let r = 0; r < size; r += 1) {
+          for (let c = 0; c < size; c += 1) {
+            const btn = document.createElement("button");
+            btn.className = "bs-cell";
+            btn.dataset.row = r;
+            btn.dataset.col = c;
+            btn.addEventListener("click", () => fire(r, c, btn));
+            gridEl.appendChild(btn);
+          }
+        }
+      }
+
+      function fire(row, col, btn) {
+        if (btn.classList.contains("hit") || btn.classList.contains("miss")) return;
+        if (board[row][col] > 0) {
+          btn.classList.add("hit");
+          btn.textContent = "H";
+          hits += 1;
+          checkSunk();
+        } else {
+          btn.classList.add("miss");
+          btn.textContent = "M";
+        }
+        updateStatus();
+      }
+
+      function checkSunk() {
+        const shipCounts = {};
+        const hitCounts = {};
+        for (let r = 0; r < size; r += 1) {
+          for (let c = 0; c < size; c += 1) {
+            const value = board[r][c];
+            if (value > 0) shipCounts[value] = (shipCounts[value] || 0) + 1;
+          }
+        }
+        const cells = Array.from(gridEl.children);
+        cells.forEach((cell) => {
+          if (cell.classList.contains("hit")) {
+            const r = Number(cell.dataset.row);
+            const c = Number(cell.dataset.col);
+            const value = board[r][c];
+            if (value > 0) hitCounts[value] = (hitCounts[value] || 0) + 1;
+          }
+        });
+        shipsLeft = 0;
+        Object.keys(shipCounts).forEach((sizeKey) => {
+          if ((hitCounts[sizeKey] || 0) < shipCounts[sizeKey]) shipsLeft += 1;
+        });
+        if (shipsLeft === 0) {
+          updateStatus("All ships sunk. You win.");
+        }
+      }
+
+      function updateStatus(message) {
+        if (message) {
+          statusEl.textContent = message;
+        } else {
+          statusEl.textContent = `Ships remaining: ${shipsLeft}`;
+        }
+      }
+
+      function resetGame() {
+        emptyBoard();
+        placeShips();
+        render();
+        updateStatus();
+      }
+
+      resetBtn.addEventListener("click", resetGame);
+      resetGame();
+    </script>
+  </body>
+</html>
