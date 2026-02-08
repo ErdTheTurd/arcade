@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Whack-a-Mole</title>
+    <link rel="stylesheet" href="../assets/site.css" />
+    <style>
+      #grid {
+        display: grid;
+        grid-template-columns: repeat(3, 110px);
+        gap: 14px;
+      }
+      .hole {
+        width: 110px;
+        height: 110px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.08);
+        display: grid;
+        place-items: center;
+        font-weight: 700;
+        font-size: 1.2rem;
+      }
+      .hole.active {
+        background: rgba(255, 106, 61, 0.3);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper fade-in">
+      <a class="back-link" href="../index.html">Back to Hub</a>
+      <div class="page-title">
+        <h2>Whack-a-Mole</h2>
+        <div class="controls">
+          <button id="start">Start</button>
+          <button id="reset">Reset</button>
+        </div>
+      </div>
+
+      <div class="game-shell">
+        <div class="game-panel">
+          <div id="grid"></div>
+        </div>
+        <div class="game-panel">
+          <strong>How to play</strong>
+          <div class="note">Click the glowing tiles. Survive 30 seconds.</div>
+          <div class="note" id="status">Score: 0</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const gridEl = document.getElementById("grid");
+      const statusEl = document.getElementById("status");
+      const startBtn = document.getElementById("start");
+      const resetBtn = document.getElementById("reset");
+
+      let holes = [];
+      let active = null;
+      let score = 0;
+      let running = false;
+      let timer = null;
+      let timeLeft = 30;
+
+      function setup() {
+        gridEl.innerHTML = "";
+        holes = [];
+        for (let i = 0; i < 9; i += 1) {
+          const btn = document.createElement("button");
+          btn.className = "hole";
+          btn.addEventListener("click", () => hit(i));
+          gridEl.appendChild(btn);
+          holes.push(btn);
+        }
+      }
+
+      function hit(index) {
+        if (!running) return;
+        if (active === index) {
+          score += 1;
+          pickHole();
+        } else {
+          score = Math.max(0, score - 1);
+        }
+        updateStatus();
+      }
+
+      function pickHole() {
+        holes.forEach((hole) => hole.classList.remove("active"));
+        active = Math.floor(Math.random() * holes.length);
+        holes[active].classList.add("active");
+      }
+
+      function updateStatus(message) {
+        statusEl.textContent = message || `Score: ${score} | Time: ${timeLeft}s`;
+      }
+
+      function tick() {
+        if (!running) return;
+        timeLeft -= 1;
+        if (timeLeft <= 0) {
+          running = false;
+          updateStatus(`Time up! Score: ${score}`);
+          return;
+        }
+        updateStatus();
+      }
+
+      startBtn.addEventListener("click", () => {
+        if (running) return;
+        running = true;
+        score = 0;
+        timeLeft = 30;
+        pickHole();
+        updateStatus();
+        clearInterval(timer);
+        timer = setInterval(tick, 1000);
+      });
+
+      resetBtn.addEventListener("click", () => {
+        running = false;
+        clearInterval(timer);
+        score = 0;
+        timeLeft = 30;
+        holes.forEach((hole) => hole.classList.remove("active"));
+        updateStatus("Score: 0");
+      });
+
+      setup();
+      updateStatus("Score: 0");
+    </script>
+  </body>
+</html>
