@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Runner Dash</title>
+    <link rel="stylesheet" href="../assets/site.css" />
+    <style>
+      #runner {
+        width: 640px;
+        height: 320px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper fade-in">
+      <a class="back-link" href="../index.html">Back to Hub</a>
+      <div class="page-title">
+        <h2>Runner Dash</h2>
+        <div class="controls">
+          <button id="start">Start</button>
+          <button id="reset">Reset</button>
+        </div>
+      </div>
+
+      <div class="game-shell">
+        <canvas id="runner" width="640" height="320"></canvas>
+        <div class="game-panel">
+          <strong>How to play</strong>
+          <div class="note">Press Space to jump over obstacles.</div>
+          <div class="note" id="status">Distance: 0</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("runner");
+      const ctx = canvas.getContext("2d");
+      const startBtn = document.getElementById("start");
+      const resetBtn = document.getElementById("reset");
+      const statusEl = document.getElementById("status");
+
+      let runner = { x: 80, y: 240, w: 28, h: 40, vy: 0, grounded: true };
+      let obstacles = [];
+      let running = false;
+      let distance = 0;
+      let frame = 0;
+
+      function resetGame() {
+        runner = { x: 80, y: 240, w: 28, h: 40, vy: 0, grounded: true };
+        obstacles = [];
+        distance = 0;
+        frame = 0;
+        updateStatus();
+        draw();
+      }
+
+      function updateStatus(message) {
+        statusEl.textContent = message || `Distance: ${distance}`;
+      }
+
+      function spawnObstacle() {
+        obstacles.push({ x: canvas.width, y: 260, w: 20, h: 20 });
+      }
+
+      function step() {
+        if (!running) return;
+        frame += 1;
+        distance += 1;
+        if (frame % 90 === 0) spawnObstacle();
+
+        runner.vy += 0.6;
+        runner.y += runner.vy;
+        if (runner.y >= 240) {
+          runner.y = 240;
+          runner.vy = 0;
+          runner.grounded = true;
+        }
+
+        obstacles.forEach((o) => (o.x -= 4));
+        obstacles = obstacles.filter((o) => o.x > -40);
+
+        for (const o of obstacles) {
+          if (
+            runner.x < o.x + o.w &&
+            runner.x + runner.w > o.x &&
+            runner.y < o.y + o.h &&
+            runner.y + runner.h > o.y
+          ) {
+            running = false;
+            updateStatus("Hit! Reset?");
+          }
+        }
+
+        draw();
+        updateStatus();
+        requestAnimationFrame(step);
+      }
+
+      function jump() {
+        if (runner.grounded && running) {
+          runner.vy = -10;
+          runner.grounded = false;
+        }
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#0b0f1f";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "#00d4ff";
+        ctx.fillRect(0, 280, canvas.width, 4);
+
+        ctx.fillStyle = "#ffd166";
+        ctx.fillRect(runner.x, runner.y, runner.w, runner.h);
+
+        ctx.fillStyle = "#ff6a3d";
+        obstacles.forEach((o) => ctx.fillRect(o.x, o.y, o.w, o.h));
+      }
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === " ") jump();
+      });
+
+      startBtn.addEventListener("click", () => {
+        if (!running) {
+          running = true;
+          requestAnimationFrame(step);
+        }
+      });
+
+      resetBtn.addEventListener("click", () => {
+        running = false;
+        resetGame();
+      });
+
+      resetGame();
+    </script>
+  </body>
+</html>
