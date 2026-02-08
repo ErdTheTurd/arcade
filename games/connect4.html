@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Connect Four</title>
+    <link rel="stylesheet" href="../assets/site.css" />
+    <style>
+      #grid {
+        display: grid;
+        grid-template-columns: repeat(7, 58px);
+        gap: 8px;
+      }
+      .slot {
+        width: 58px;
+        height: 58px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.08);
+        display: grid;
+        place-items: center;
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper fade-in">
+      <a class="back-link" href="../index.html">Back to Hub</a>
+      <div class="page-title">
+        <h2>Connect Four</h2>
+        <div class="controls">
+          <button id="reset">Reset</button>
+        </div>
+      </div>
+
+      <div class="game-shell">
+        <div class="game-panel">
+          <div id="grid"></div>
+        </div>
+        <div class="game-panel">
+          <strong>How to play</strong>
+          <div class="note">Click a column to drop your disc. You are Red.</div>
+          <div class="note" id="status">Your move.</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const rows = 6;
+      const cols = 7;
+      let board = Array.from({ length: rows }, () => Array(cols).fill(""));
+      const gridEl = document.getElementById("grid");
+      const statusEl = document.getElementById("status");
+      const resetBtn = document.getElementById("reset");
+      let gameOver = false;
+
+      function render() {
+        gridEl.innerHTML = "";
+        for (let r = 0; r < rows; r += 1) {
+          for (let c = 0; c < cols; c += 1) {
+            const slot = document.createElement("button");
+            slot.className = "slot";
+            slot.dataset.col = c;
+            const value = board[r][c];
+            if (value === "R") slot.style.background = "#ff6a3d";
+            if (value === "Y") slot.style.background = "#ffd166";
+            slot.addEventListener("click", () => drop(c));
+            gridEl.appendChild(slot);
+          }
+        }
+      }
+
+      function checkWinner(token) {
+        const directions = [
+          [1, 0],
+          [0, 1],
+          [1, 1],
+          [1, -1],
+        ];
+        for (let r = 0; r < rows; r += 1) {
+          for (let c = 0; c < cols; c += 1) {
+            if (board[r][c] !== token) continue;
+            for (const [dr, dc] of directions) {
+              let count = 0;
+              for (let i = 0; i < 4; i += 1) {
+                const nr = r + dr * i;
+                const nc = c + dc * i;
+                if (board[nr] && board[nr][nc] === token) count += 1;
+              }
+              if (count === 4) return true;
+            }
+          }
+        }
+        return false;
+      }
+
+      function drop(col) {
+        if (gameOver) return;
+        for (let r = rows - 1; r >= 0; r -= 1) {
+          if (!board[r][col]) {
+            board[r][col] = "R";
+            render();
+            if (checkWinner("R")) {
+              statusEl.textContent = "You win.";
+              gameOver = true;
+              return;
+            }
+            if (board.flat().every((cell) => cell)) {
+              statusEl.textContent = "Draw.";
+              gameOver = true;
+              return;
+            }
+            aiMove();
+            return;
+          }
+        }
+      }
+
+      function aiMove() {
+        const available = [];
+        for (let c = 0; c < cols; c += 1) {
+          if (!board[0][c]) available.push(c);
+        }
+        const pick = available[Math.floor(Math.random() * available.length)];
+        for (let r = rows - 1; r >= 0; r -= 1) {
+          if (!board[r][pick]) {
+            board[r][pick] = "Y";
+            break;
+          }
+        }
+        render();
+        if (checkWinner("Y")) {
+          statusEl.textContent = "AI wins.";
+          gameOver = true;
+        } else {
+          statusEl.textContent = "Your move.";
+        }
+      }
+
+      resetBtn.addEventListener("click", () => {
+        board = Array.from({ length: rows }, () => Array(cols).fill(""));
+        gameOver = false;
+        statusEl.textContent = "Your move.";
+        render();
+      });
+
+      render();
+    </script>
+  </body>
+</html>
