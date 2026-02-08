@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tetris Lite</title>
+    <link rel="stylesheet" href="../assets/site.css" />
+    <style>
+      #tetris {
+        width: 320px;
+        height: 640px;
+      }
+      .stats {
+        display: grid;
+        gap: 8px;
+        font-size: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper fade-in">
+      <a class="back-link" href="../index.html">Back to Hub</a>
+      <div class="page-title">
+        <h2>Tetris Lite</h2>
+        <div class="controls">
+          <button id="start">Start</button>
+          <button id="reset">Reset</button>
+        </div>
+      </div>
+
+      <div class="game-shell">
+        <canvas id="tetris" width="320" height="640"></canvas>
+        <div class="game-panel">
+          <strong>How to play</strong>
+          <div class="note">Arrow keys move and rotate. Space drops instantly.</div>
+          <div class="note">Clear lines to score. Speed increases every 5 lines.</div>
+          <div class="stats" id="stats"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("tetris");
+      const ctx = canvas.getContext("2d");
+      const statsEl = document.getElementById("stats");
+      const startBtn = document.getElementById("start");
+      const resetBtn = document.getElementById("reset");
+
+      const cols = 10;
+      const rows = 20;
+      const block = 32;
+      const colors = [
+        "#f94144",
+        "#f3722c",
+        "#f9c74f",
+        "#90be6d",
+        "#43aa8b",
+        "#577590",
+        "#6a4c93",
+      ];
+
+      const shapes = [
+        [[1, 1, 1, 1]],
+        [
+          [1, 1],
+          [1, 1],
+        ],
+        [
+          [0, 1, 0],
+          [1, 1, 1],
+        ],
+        [
+          [1, 0, 0],
+          [1, 1, 1],
+        ],
+        [
+          [0, 0, 1],
+          [1, 1, 1],
+        ],
+        [
+          [0, 1, 1],
+          [1, 1, 0],
+        ],
+        [
+          [1, 1, 0],
+          [0, 1, 1],
+        ],
+      ];
+
+      let grid = [];
+      let current = null;
+      let next = null;
+      let dropInterval = 700;
+      let lastTime = 0;
+      let dropCounter = 0;
+      let running = false;
+      let score = 0;
+      let lines = 0;
+      let level = 1;
+
+      function createGrid() {
+        grid = Array.from({ length: rows }, () => Array(cols).fill(0));
+      }
+
+      function spawn() {
+        if (!next) next = randomPiece();
+        current = next;
+        next = randomPiece();
+        current.x = Math.floor(cols / 2) - 1;
+        current.y = 0;
+        if (collides(current)) {
+          running = false;
+          updateStats("Game over. Hit reset.");
+        }
+      }
+
+      function randomPiece() {
+        const index = Math.floor(Math.random() * shapes.length);
+        return { shape: shapes[index], color: colors[index], x: 0, y: 0 };
+      }
+
+      function rotate(matrix) {
+        return matrix[0].map((_, i) => matrix.map((row) => row[i]).reverse());
+      }
+
+      function collides(piece) {
+        for (let y = 0; y < piece.shape.length; y += 1) {
+          for (let x = 0; x < piece.shape[y].length; x += 1) {
+            if (piece.shape[y][x]) {
+              const nx = piece.x + x;
+              const ny = piece.y + y;
+              if (nx < 0 || nx >= cols || ny >= rows) return true;
+              if (ny >= 0 && grid[ny][nx]) return true;
+            }
+          }
+        }
+        return false;
+      }
+
+      function merge() {
+        current.shape.forEach((row, y) => {
+          row.forEach((value, x) => {
+            if (value) {
+              grid[current.y + y][current.x + x] = current.color;
+            }
+          });
+        });
+      }
+
+      function clearLines() {
+        let cleared = 0;
+        grid = grid.filter((row) => {
+          if (row.every((cell) => cell)) {
+            cleared += 1;
+            return false;
+          }
+          return true;
+        });
+        while (grid.length < rows) grid.unshift(Array(cols).fill(0));
+        if (cleared > 0) {
+          lines += cleared;
+          score += cleared * 100;
+          level = Math.floor(lines / 5) + 1;
+          dropInterval = Math.max(150, 700 - (level - 1) * 60);
+        }
+      }
+
+      function drawCell(x, y, color) {
+        ctx.fillStyle = color || "rgba(255,255,255,0.08)";
+        ctx.fillRect(x * block, y * block, block - 1, block - 1);
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let y = 0; y < rows; y += 1) {
+          for (let x = 0; x < cols; x += 1) {
+            drawCell(x, y, grid[y][x]);
+          }
+        }
+        if (current) {
+          current.shape.forEach((row, y) => {
+            row.forEach((value, x) => {
+              if (value) drawCell(current.x + x, current.y + y, current.color);
+            });
+          });
+        }
+      }
+
+      function updateStats(message) {
+        statsEl.innerHTML = `Score: ${score}<br/>Lines: ${lines}<br/>Level: ${level}${message ? `<br/><span class='note'>${message}</span>` : ""}`;
+      }
+
+      function update(time = 0) {
+        if (!running) {
+          draw();
+          return;
+        }
+        const delta = time - lastTime;
+        lastTime = time;
+        dropCounter += delta;
+        if (dropCounter > dropInterval) {
+          current.y += 1;
+          if (collides(current)) {
+            current.y -= 1;
+            merge();
+            clearLines();
+            spawn();
+          }
+          dropCounter = 0;
+        }
+        draw();
+        updateStats();
+        requestAnimationFrame(update);
+      }
+
+      function hardDrop() {
+        if (!running) return;
+        while (!collides(current)) {
+          current.y += 1;
+        }
+        current.y -= 1;
+        merge();
+        clearLines();
+        spawn();
+      }
+
+      document.addEventListener("keydown", (event) => {
+        if (!running || !current) return;
+        if (event.key === "ArrowLeft") {
+          current.x -= 1;
+          if (collides(current)) current.x += 1;
+        }
+        if (event.key === "ArrowRight") {
+          current.x += 1;
+          if (collides(current)) current.x -= 1;
+        }
+        if (event.key === "ArrowDown") {
+          current.y += 1;
+          if (collides(current)) current.y -= 1;
+        }
+        if (event.key === "ArrowUp") {
+          const rotated = rotate(current.shape);
+          const backup = current.shape;
+          current.shape = rotated;
+          if (collides(current)) current.shape = backup;
+        }
+        if (event.key === " ") {
+          hardDrop();
+        }
+      });
+
+      startBtn.addEventListener("click", () => {
+        if (!running) {
+          running = true;
+          updateStats();
+          requestAnimationFrame(update);
+        }
+      });
+
+      resetBtn.addEventListener("click", () => {
+        createGrid();
+        score = 0;
+        lines = 0;
+        level = 1;
+        dropInterval = 700;
+        running = true;
+        spawn();
+        updateStats();
+        requestAnimationFrame(update);
+      });
+
+      createGrid();
+      spawn();
+      draw();
+      updateStats("Press start to play.");
+    </script>
+  </body>
+</html>
